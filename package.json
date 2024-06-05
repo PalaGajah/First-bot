@@ -10,7 +10,7 @@
 		"plugins": "plugins"
 	},
 	"scripts": {
-		"start": "node main.js",
+		"start": "node main.js --gconly",
 		"test": "node test.js",
 		"test2": "nodemon index.js"
 	},
