@@ -1,23 +1,27 @@
-import fetch from "node-fetch";
-import cheerio from "cheerio";
-import axios from "axios";
+import axios from "axios"
+import fetch from "node-fetch"
+import cheerio from "cheerio"
 
-let handler = async (m, {
-    text,
-    usedPrefix,
-    command,
+const handler = async (m, {
+    args,
     conn
 }) => {
-    if (!text) throw `Masukkan Link Instagram!\nExample\n${usedPrefix + command} https://www.instagram.com/p/C7X6QDcyQDr/?igsh=cjJsanJwMGkzNTY2`;
-    m.reply("Wait...");
+    if (!args[0]) {
+        return m.reply('Penggunaan:\n!ig < link / url >\n\nContoh: \n!ig https://www.instagram.com')
+    }
+    if (!/https:\/\/www\.instagram\.com\/reel/i.test(args[0]) && !/https:\/\/www\.instagram\.com\/p/i.test(args[0]) && !/https:\/\/www\.instagram\.com\/tv/i.test(args[0]) && !/https:\/\/www\.instagram\.com\/stories/i.test(args[0])) {
+        return m.reply("Failed\nInputan bukan url / link instagram");
+    }
     try {
-        const result = await instagram(text)
-        for (let i of result) {
+        await m.reply("Wait...")
+        const result = await igdl(args[0])
+        for (let i of result.data) {
+            const mimeType = (await axios(i)).headers["content-type"]
 
-            if (i.type === "image" ) {
+            if (/image/i.test(mimeType)) {
                 await conn.sendMessage(m.chat, {
                     image: {
-                        url: i.url
+                        url: i
                     }, caption: "Instagram Downloader",
                     mentions: [m.sender]
                 }, {
@@ -26,7 +30,7 @@ let handler = async (m, {
             } else {
                 await conn.sendMessage(m.chat, {
                     video: {
-                        url: i.url
+                        url: i
                     }, caption: "Instagram Downloader",
                     mentions: [m.sender]
                 }, {
@@ -34,17 +38,80 @@ let handler = async (m, {
                 })
             }
         }
-    } catch (error) {
-        m.reply("Terjadi kesalahan silahkan coba nanti");
+    } catch (e) {
+        m.reply("Error saat mendapatkan data!")
     }
-};
-handler.help = ["instagram"];
-handler.tags = ["down"];
-handler.command = ["instagram", "ig", "igdl"];
+}
+handler.help = ['instagram / ig < url >']
+handler.tags = ['media']
+handler.command = ['ig', 'igdl', 'instagram']
 
-export default handler;
+export default handler
 
-async function instagram(url) {
+async function igdl(url) {
+    try {
+        const resp = await axios.post("https://saveig.app/api/ajaxSearch", new URLSearchParams({
+            q: url,
+            t: "media",
+            lang: "id"
+        }), {
+            headers: {
+                accept: "*/*",
+                "user-agent": "PostmanRuntime/7.32.2"
+            }
+        })
+        let result = {
+            status: true,
+            data: []
+        }
+        const $ = cheerio.load(resp.data.data)
+        $(".download-box > li > .download-items").each(function() {
+            result.data.push($(this).find(".download-items__btn > a").attr("href"))
+        })
+        return result
+    } catch {
+        const result = {
+            status: false,
+            message: "Couldn't fetch data of url"
+        }
+        console.log(result)
+        return result
+    }
+}
+
+async function igdlv2(url) {
+    try {
+        let result = {
+            status: true,
+            media: []
+        }
+        const {
+            data
+        } = await axios(`https://www.y2mate.com/mates/analyzeV2/ajax`, {
+            method: "post",
+            data: {
+                k_query: url,
+                k_page: "Instagram",
+                hl: "id",
+                q_auto: 0
+            },
+            headers: {
+                "content-type": "application/x-www-form-urlencoded",
+                "user-agent": "PostmanRuntime/7.32.2"
+            }
+        })
+        await data.links.video.map((video) => result.media.push(video.url))
+        return result
+    } catch (err) {
+        const result = {
+            status: false,
+            message: `Media not found`
+        }
+        return result
+    }
+}
+
+async function igdlv3(url) {
     let res = await axios("https://indown.io/");
     let _$ = cheerio.load(res.data);
     let referer = _$("input[name=referer]").val();
@@ -81,4 +148,4 @@ async function instagram(url) {
         });
     });
     return result;
-                  }
+                    }
