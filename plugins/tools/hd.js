@@ -45,6 +45,7 @@ const handler = async (m, {
     }           
 }
 handler.command = ["emi", "pixelart", "txt2img", "hd"]
+handler.tags = ["media"]
 handler.help = ["emi < prompt >", "pixelart < prompt >", "txt2img < prompt >", "hd < balas image >"]
 
 export default handler
