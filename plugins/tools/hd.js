@@ -1,3 +1,8 @@
+import fetch from 'node-fetch';
+import axios from 'axios';
+import { fileTypeFromBuffer } from 'file-type';
+import FormData from 'form-data';
+
 const handler = async (m, {
     command,
     text,
@@ -40,12 +45,13 @@ const handler = async (m, {
             return m.reply("Balas pesan bertipe image dengan caption: !hd")    
         }
         m.reply("Tunggu sebentar...")
+        const image_url = await uploader(await m.quoted.download())
         const res = await request("/tools/esregan?url=" + image_url + "&type=base")
         sock.sendMessage(m.chat, { image: { url: res.result.img }, mentions: [m.sender] }, { quoted: m })
     }           
 }
 handler.command = ["emi", "pixelart", "txt2img", "hd"]
-handler.tags = ["media"]
+handler.tags = ["media]
 handler.help = ["emi < prompt >", "pixelart < prompt >", "txt2img < prompt >", "hd < balas image >"]
 
 export default handler
@@ -62,4 +68,28 @@ async function request(path) {
     } catch (err) {
         throw new Error("Error fetcing data: " + err)
     }
-             }
+}
+
+async function uploader(buffer) {
+    if (!buffer) throw new Error('Buffer is required');
+    try {
+        const {
+            ext
+        } = await fileTypeFromBuffer(buffer);
+        if (!ext) throw new Error('Invalid file type');
+        const formData = new FormData();
+        const fileName = Date.now() + "." + ext;
+        formData.append('file', buffer, {
+            filename: fileName
+        });
+        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData
+        });
+        if (!res.ok) throw new Error('Failed to upload to tmpfiles.org');
+        const img = await res.json();
+        return img.data.url.replace('https://tmpfiles.org', 'https://tmpfiles.org/dl');
+    } catch (error) {
+        throw new Error(`Tmpfile upload failed: ${error.message}`);
+    }
+            }
