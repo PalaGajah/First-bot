@@ -46,12 +46,12 @@ const handler = async (m, {
         }
         m.reply("Tunggu sebentar...")
         const image_url = await uploader(await m.quoted.download())
-        const res = await request("/tools/esregan?url=" + image_url + "&type=base")
+        const res = await request("/tools/enhance?url=" + image_url + "&type=modelx2%2025%20JXL")
         sock.sendMessage(m.chat, { image: { url: res.result.img }, mentions: [m.sender] }, { quoted: m })
     }           
 }
 handler.command = ["emi", "pixelart", "txt2img", "hd"]
-handler.tags = ["media]
+handler.tags = ["media"]
 handler.help = ["emi < prompt >", "pixelart < prompt >", "txt2img < prompt >", "hd < balas image >"]
 
 export default handler
@@ -92,4 +92,4 @@ async function uploader(buffer) {
     } catch (error) {
         throw new Error(`Tmpfile upload failed: ${error.message}`);
     }
-            }
+               }
