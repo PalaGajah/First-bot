@@ -11,10 +11,10 @@ export default async function handler(m, {
         return m.reply('Example: !ai kapan Indonesia merdeka?')
     }
     try {
-        const apiUrl = "https://api.onesytex.my.id/api/gpt-3_5-turbo?text="
+        const apiUrl = "https://aemt.me/openai?text="
         const res = await fetch(apiUrl + text)
         const json = await res.json()
-        m.reply(json.result.reply)
+        m.reply(json.result)
     } catch (err) {
         m.reply("Internal server Error!")
     }
